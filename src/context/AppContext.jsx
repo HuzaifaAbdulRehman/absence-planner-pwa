@@ -3,6 +3,7 @@ import { useLocalStorage } from '../hooks/useLocalStorage'
 import { STORAGE_KEYS, SESSION_STATUS, DEFAULT_ALLOWED_ABSENCE_PERCENTAGE, COURSE_COLORS } from '../utils/constants'
 import { calculateTotalClasses, courseHasClassOnDate, getSessionCountOnDate, getTodayISO } from '../utils/dateHelpers'
 import { calculateAttendanceStats, getDayStatus } from '../utils/attendanceCalculator'
+import { generateShortName } from '../utils/courseNameHelper'
 import {
   getNotificationSettings,
   saveNotificationSettings,
@@ -119,9 +120,7 @@ export function AppProvider({ children }) {
           updates.colorHex = assignedColor.hex
         }
         if (!course.shortName) {
-          // Auto-generate short name from first letters of each word, max 12 chars
-          const words = course.name.trim().split(/\s+/)
-          updates.shortName = words.map(w => w[0]).join('').toUpperCase().slice(0, 12)
+          updates.shortName = generateShortName(course.name, course.courseCode || course.code, 12)
         }
         return updates
       }))
@@ -279,7 +278,7 @@ export function AppProvider({ children }) {
       newCourse = {
         id: generateId('course'),
         name: courseData.name,
-        shortName: courseData.shortName,
+        shortName: courseData.shortName || generateShortName(courseData.name, courseData.courseCode, 12),
         creditHours: courseData.creditHours || 2,
         weekdays: courseData.weekdays,
         startDate: normalizedStartDate,
@@ -401,7 +400,7 @@ export function AppProvider({ children }) {
         const newCourse = {
           id: generateId('course'),
           name: courseData.name,
-          shortName: courseData.shortName,
+          shortName: courseData.shortName || generateShortName(courseData.name, courseData.courseCode, 12),
           creditHours: courseData.creditHours || 2,
           weekdays: courseData.weekdays,
           startDate: normalizedStartDate,

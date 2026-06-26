@@ -4,6 +4,7 @@ import { GRADE_SCALE, calculateGPA, formatGPA, getGPAColor } from '../../utils/g
 import { vibrate } from '../../utils/uiHelpers'
 import Toast from '../shared/Toast'
 import { useApp } from '../../context/AppContext'
+import { getCourseDisplayAlias } from '../../utils/courseNameHelper'
 
 export default function GPAForOthers() {
   const { courses: myCourses } = useApp() // Get courses from My Courses
@@ -23,7 +24,7 @@ export default function GPAForOthers() {
         const parsed = JSON.parse(savedData)
         setStudents(parsed.students || [])
         setCourses(parsed.courses || [])
-      } catch (error) {
+      } catch {
         initializeDefaults()
       }
     } else {
@@ -87,7 +88,7 @@ export default function GPAForOthers() {
     // Remove grades for this student from all courses
     const updatedCourses = courses.map(course => {
       if (course.grades && course.grades[studentId]) {
-        const { [studentId]: removed, ...remainingGrades } = course.grades
+        const { [studentId]: _removed, ...remainingGrades } = course.grades
         return { ...course, grades: remainingGrades }
       }
       return course
@@ -143,8 +144,7 @@ export default function GPAForOthers() {
 
     // Map My Courses to the format needed for GPAForOthers
     const importedCourses = myCourses.map(course => {
-      // Use short name if available, otherwise use full name
-      const displayName = course.shortName || course.name || course.courseName || ''
+      const displayName = getCourseDisplayAlias(course)
 
       // Check if it's a lab course (name or code contains 'Lab' or 'LAB')
       const isLab = /lab/i.test(course.name || '') || /lab/i.test(course.code || course.courseCode || '')
@@ -310,12 +310,12 @@ export default function GPAForOthers() {
           {/* Table Header */}
           <div className="flex border-b border-dark-border bg-dark-surface/50 sticky top-0 z-10">
             {/* Course Name Column - Responsive */}
-            <div className="w-28 xs:w-32 sm:w-40 md:w-48 lg:w-56 xl:w-64 p-2 xs:p-2.5 sm:p-3 md:p-3.5 border-r border-dark-border flex-shrink-0">
+            <div className="sticky left-0 z-30 bg-dark-surface w-28 xs:w-32 sm:w-40 md:w-48 lg:w-56 xl:w-64 p-2 xs:p-2.5 sm:p-3 md:p-3.5 border-r border-dark-border flex-shrink-0">
               <p className="text-[10px] xs:text-xs sm:text-sm font-semibold text-content-secondary uppercase tracking-wide">Course</p>
             </div>
 
             {/* Credit Hours Column - Responsive */}
-            <div className="w-14 xs:w-16 sm:w-20 md:w-24 lg:w-28 p-2 xs:p-2.5 sm:p-3 md:p-3.5 border-r border-dark-border flex-shrink-0">
+            <div className="sticky left-28 xs:left-32 sm:left-40 md:left-48 lg:left-56 xl:left-64 z-30 bg-dark-surface w-14 xs:w-16 sm:w-20 md:w-24 lg:w-28 p-2 xs:p-2.5 sm:p-3 md:p-3.5 border-r border-dark-border flex-shrink-0 shadow-[4px_0_10px_rgba(0,0,0,0.18)]">
               <p className="text-[10px] xs:text-xs sm:text-sm font-semibold text-content-secondary uppercase tracking-wide text-center">Credits</p>
             </div>
 
@@ -358,7 +358,7 @@ export default function GPAForOthers() {
           {courses.map((course, courseIndex) => (
             <div key={course.id} className="flex border-b border-dark-border/50 hover:bg-dark-surface/30 transition-colors">
               {/* Course Name - Responsive */}
-              <div className="w-28 xs:w-32 sm:w-40 md:w-48 lg:w-56 xl:w-64 p-2 xs:p-2.5 sm:p-3 md:p-3.5 border-r border-dark-border/50 flex-shrink-0">
+              <div className="sticky left-0 z-20 bg-dark-surface-raised w-28 xs:w-32 sm:w-40 md:w-48 lg:w-56 xl:w-64 p-2 xs:p-2.5 sm:p-3 md:p-3.5 border-r border-dark-border/50 flex-shrink-0">
                 <input
                   type="text"
                   value={course.courseName}
@@ -371,7 +371,7 @@ export default function GPAForOthers() {
               </div>
 
               {/* Credit Hours - Responsive */}
-              <div className="w-14 xs:w-16 sm:w-20 md:w-24 lg:w-28 p-2 xs:p-2.5 sm:p-3 md:p-3.5 border-r border-dark-border/50 flex-shrink-0">
+              <div className="sticky left-28 xs:left-32 sm:left-40 md:left-48 lg:left-56 xl:left-64 z-20 bg-dark-surface-raised w-14 xs:w-16 sm:w-20 md:w-24 lg:w-28 p-2 xs:p-2.5 sm:p-3 md:p-3.5 border-r border-dark-border/50 flex-shrink-0 shadow-[4px_0_10px_rgba(0,0,0,0.16)]">
                 <input
                   type="number"
                   min="1"
@@ -435,7 +435,7 @@ export default function GPAForOthers() {
           {/* GPA Results Row - Responsive */}
           <div className="flex bg-accent/5 border-t-2 border-accent/30">
             {/* Label - Responsive */}
-            <div className="w-28 xs:w-32 sm:w-40 md:w-48 lg:w-56 xl:w-64 p-2 xs:p-2.5 sm:p-3 md:p-3.5 border-r border-dark-border/50 flex-shrink-0 flex items-center">
+            <div className="sticky left-0 z-20 bg-dark-surface-raised w-28 xs:w-32 sm:w-40 md:w-48 lg:w-56 xl:w-64 p-2 xs:p-2.5 sm:p-3 md:p-3.5 border-r border-dark-border/50 flex-shrink-0 flex items-center">
               <div className="flex items-center gap-1 xs:gap-1.5 md:gap-2">
                 <Award className="w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-accent" />
                 <p className="text-[10px] xs:text-xs sm:text-sm md:text-base lg:text-lg font-bold text-content-primary">GPA</p>
@@ -443,7 +443,7 @@ export default function GPAForOthers() {
             </div>
 
             {/* Empty Credits Column - Responsive */}
-            <div className="w-14 xs:w-16 sm:w-20 md:w-24 lg:w-28 p-2 xs:p-2.5 sm:p-3 md:p-3.5 border-r border-dark-border/50 flex-shrink-0" />
+            <div className="sticky left-28 xs:left-32 sm:left-40 md:left-48 lg:left-56 xl:left-64 z-20 bg-dark-surface-raised w-14 xs:w-16 sm:w-20 md:w-24 lg:w-28 p-2 xs:p-2.5 sm:p-3 md:p-3.5 border-r border-dark-border/50 flex-shrink-0 shadow-[4px_0_10px_rgba(0,0,0,0.16)]" />
 
             {/* Student GPAs - Responsive */}
             {students.map((student) => {

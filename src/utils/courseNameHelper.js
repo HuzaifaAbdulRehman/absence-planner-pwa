@@ -97,6 +97,67 @@ const KNOWN_ABBREVIATIONS = {
   'graph theory': 'GT'
 }
 
+const CODE_PREFIX_PATTERN = /^[A-Z]{1,4}\s*\d{3,4}\s*-\s*(.+)$/i
+const ALIAS_TOKEN_PATTERN = /^[A-Za-z][A-Za-z0-9&+-]{1,9}$/
+
+function hasLabMarker(...values) {
+  return values.some(value => /\blab\b/i.test(String(value || '')))
+}
+
+/**
+ * Extract the human course alias from timetable-style course codes.
+ * Examples:
+ * - CS0009-AI Artificial Intelligence -> AI
+ * - CL1004-OOP Lab -> OOP Lab
+ * - SE 4001-SRE -> SRE
+ */
+export function extractCourseAliasFromCode(courseCode = '', courseName = '') {
+  if (!courseCode || typeof courseCode !== 'string') return ''
+
+  const normalizedCode = courseCode.trim().replace(/\s+/g, ' ')
+  const prefixMatch = normalizedCode.match(CODE_PREFIX_PATTERN)
+  const aliasSource = (prefixMatch ? prefixMatch[1] : normalizedCode).trim()
+
+  if (!aliasSource) return ''
+
+  const isLab = hasLabMarker(normalizedCode, courseName)
+  const aliasTokens = aliasSource
+    .replace(/[(),]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+
+  const firstToken = aliasTokens[0]?.replace(/[.:;]+$/g, '')
+  if (!firstToken || !ALIAS_TOKEN_PATTERN.test(firstToken)) {
+    return ''
+  }
+
+  let alias = firstToken
+  if (isLab && !/\blab\b/i.test(alias)) {
+    alias += ' Lab'
+  }
+
+  return alias
+}
+
+/**
+ * Get the short display alias to use in compact GPA/course views.
+ * Prefers timetable code aliases over stored shortName so old bad aliases
+ * like "AA" do not leak into GPA imports.
+ */
+export function getCourseDisplayAlias(course = {}, maxLength = 8) {
+  if (!course) return 'N/A'
+
+  const courseName = course.name || course.courseName || ''
+  const courseCode = course.code || course.courseCode || ''
+  const aliasFromCode = extractCourseAliasFromCode(courseCode, courseName)
+
+  if (aliasFromCode) return aliasFromCode
+
+  if (course.shortName) return course.shortName
+
+  return generateShortName(courseName, courseCode, maxLength)
+}
+
 /**
  * Generate a short name/abbreviation from a course name
  * @param {string} courseName - Full course name
@@ -108,6 +169,9 @@ export function generateShortName(courseName, courseCode = '', maxLength = 8) {
   // If no course name provided, try to generate from courseCode itself
   const nameToProcess = courseName || courseCode
   if (!nameToProcess) return 'N/A'
+
+  const aliasFromCode = extractCourseAliasFromCode(courseCode, courseName)
+  if (aliasFromCode) return aliasFromCode
 
   const normalizedName = nameToProcess.toLowerCase().trim()
 
@@ -124,7 +188,7 @@ export function generateShortName(courseName, courseCode = '', maxLength = 8) {
   }
 
   // Remove common suffixes for processing
-  let processedName = normalizedName
+  const processedName = normalizedName
     .replace(/\s*\(lab\)$/i, '')
     .replace(/\s*lab$/i, '')
 
@@ -132,7 +196,7 @@ export function generateShortName(courseName, courseCode = '', maxLength = 8) {
 
   // Split into words and filter
   const words = processedName
-    .replace(/[&\/\-\(\)]/g, ' ')
+    .replace(/[&/()-]/g, ' ')
     .split(/\s+/)
     .filter(word => word.length > 0 && !EXCLUDED_WORDS.has(word.toLowerCase()))
 
@@ -140,9 +204,8 @@ export function generateShortName(courseName, courseCode = '', maxLength = 8) {
     return nameToProcess.substring(0, maxLength).toUpperCase()
   }
 
-  let shortName = ''
-
   // Strategy 1: If single word, take first few characters
+  let shortName
   if (words.length === 1) {
     shortName = words[0].substring(0, maxLength).toUpperCase()
   }

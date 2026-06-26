@@ -56,7 +56,7 @@ function createBackup(key, data) {
         window.localStorage.removeItem(oldKey)
       }
     })
-  } catch (error) {
+  } catch {
     // Failed to create backup
   }
 }
@@ -82,7 +82,7 @@ function tryRestoreFromBackup(key) {
         }
       }
     }
-  } catch (error) {
+  } catch {
     // Failed to restore from backup
   }
 
@@ -124,7 +124,7 @@ export function useLocalStorage(key, initialValue) {
       }
 
       return parsed
-    } catch (error) {
+    } catch {
       // Try to restore from backup
       const restored = tryRestoreFromBackup(key)
       if (restored !== null) {
@@ -134,7 +134,7 @@ export function useLocalStorage(key, initialValue) {
       // Clear corrupted data
       try {
         window.localStorage.removeItem(key)
-      } catch (clearError) {
+      } catch {
         // Failed to clear corrupted data
       }
 
@@ -145,9 +145,11 @@ export function useLocalStorage(key, initialValue) {
   // Return a wrapped version of useState's setter function that
   // persists the new value to localStorage.
   const setValue = (value) => {
+    let valueToStore
+
     try {
       // Allow value to be a function (like useState)
-      const valueToStore = value instanceof Function ? value(storedValue) : value
+      valueToStore = value instanceof Function ? value(storedValue) : value
 
       // Validate before saving
       if (!validateData(key, valueToStore)) {
@@ -177,7 +179,7 @@ export function useLocalStorage(key, initialValue) {
           // Retry save
           window.localStorage.setItem(key, JSON.stringify(valueToStore))
           setStoredValue(valueToStore)
-        } catch (retryError) {
+        } catch {
           // Failed to save even after clearing backups
         }
       }
@@ -198,7 +200,7 @@ export function useSyncedLocalStorage(key, initialValue) {
       if (e.key === key && e.newValue) {
         try {
           setStoredValue(JSON.parse(e.newValue))
-        } catch (error) {
+        } catch {
           // Error syncing localStorage
         }
       }

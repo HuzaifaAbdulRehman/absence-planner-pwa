@@ -6,6 +6,7 @@ import { GRADE_SCALE, calculateGPA, getGPAColor, formatGPA, getTotalCredits, cal
 import { BookOpen, Plus, Save, Trash2, Calendar, Award, TrendingUp, Eye, EyeOff, ChevronDown, ChevronUp, Edit2, AlertTriangle, CheckCircle2, XCircle, Hash, Users, GraduationCap, ToggleLeft, ToggleRight } from 'lucide-react'
 import Toast from '../shared/Toast'
 import { vibrate } from '../../utils/uiHelpers'
+import { getCourseDisplayAlias } from '../../utils/courseNameHelper'
 import GPAForOthers from './GPAForOthers'
 import SemesterSetupModal from './SemesterSetupModal'
 
@@ -82,7 +83,7 @@ export default function GPAView() {
 
     const imported = courses.map(course => ({
       id: course.id,
-      courseName: course.name,
+      courseName: getCourseDisplayAlias(course),
       courseCode: course.code || course.courseCode,
       creditHours: course.creditHours || 3, // Default to 3 if not specified
       grade: '', // Empty by default
@@ -570,8 +571,7 @@ export default function GPAView() {
       // Import courses from My Courses
       if (courses && courses.length > 0) {
         const imported = courses.map(course => {
-          // Use short name if available, otherwise use full name
-          const displayName = course.shortName || course.name
+          const displayName = getCourseDisplayAlias(course)
 
           // Check if it's a lab course (name or code contains 'Lab' or 'LAB')
           const isLab = /lab/i.test(course.name) || /lab/i.test(course.code || course.courseCode || '')
